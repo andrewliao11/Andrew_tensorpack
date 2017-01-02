@@ -40,9 +40,9 @@ def add_activation_summary(x, name=None):
     if name is None:
         name = x.name
     with tf.name_scope('activation-summary'):
-        tf.summary.histogram(name, x)
-        tf.summary.scalar(name + '-sparsity', tf.nn.zero_fraction(x))
-        tf.summary.scalar(name + '-rms', rms(x))
+        tf.histogram_summary(name, x)
+        tf.scalar_summary(name + '-sparsity', tf.nn.zero_fraction(x))
+        tf.scalar_summary(name + '-rms', rms(x))
 
 def add_param_summary(summary_lists):
     """
@@ -59,20 +59,20 @@ def add_param_summary(summary_lists):
         name = var.name.replace(':0', '')
         if action == 'scalar':
             assert ndim == 0, "Scalar summary on high-dimension data. Maybe you want 'mean'?"
-            tf.summary.scalar(name, var)
+            tf.scalar_summary(name, var)
             return
         assert ndim > 0, "Cannot perform {} summary on scalar data".format(action)
         if action == 'histogram':
-            tf.summary.histogram(name, var)
+            tf.histogram_summary(name, var)
             return
         if action == 'sparsity':
-            tf.summary.scalar(name + '-sparsity', tf.nn.zero_fraction(var))
+            tf.scalar_summary(name + '-sparsity', tf.nn.zero_fraction(var))
             return
         if action == 'mean':
-            tf.summary.scalar(name + '-mean', tf.reduce_mean(var))
+            tf.scalar_summary(name + '-mean', tf.reduce_mean(var))
             return
         if action == 'rms':
-            tf.summary.scalar(name + '-rms', rms(var))
+            tf.scalar_summary(name + '-rms', rms(var))
             return
         raise RuntimeError("Unknown summary type: {}".format(action))
 
@@ -119,6 +119,6 @@ def summary_moving_average(tensors=None):
     avg_maintain_op = averager.apply(tensors)
     for idx, c in enumerate(tensors):
         name = re.sub('tower[p0-9]+/', '', c.op.name)
-        tf.summary.scalar(name + '-summary', averager.average(c))
+        tf.scalar_summary(name + '-summary', averager.average(c))
     return avg_maintain_op
 

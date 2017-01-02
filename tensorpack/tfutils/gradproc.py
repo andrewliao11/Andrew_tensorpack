@@ -111,7 +111,7 @@ class SummaryGradient(MapGradient):
         name = var.op.name
         if name not in _summaried_gradient:
             _summaried_gradient.add(name)
-            tf.summary.histogram(name + '-grad', grad)
+            tf.histogram_summary(name + '-grad', grad)
             add_moving_summary(rms(grad, name=name + '/rms'))
         return grad
 

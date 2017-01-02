@@ -8,6 +8,7 @@ import tensorflow as tf
 from copy import copy
 import six
 from contextlib import contextmanager
+import pdb
 
 __all__ = ['get_default_sess_config',
            'get_global_step',
@@ -47,9 +48,14 @@ def get_global_step_var():
         assert scope.name == '', \
                 "Creating global_step_var under a variable scope would cause problems!"
         with tf.variable_scope(scope, reuse=False):
+	    """
             var = tf.get_variable(GLOBAL_STEP_OP_NAME, shape=[],
                     initializer=tf.constant_initializer(dtype=tf.int32),
                     trainable=False, dtype=tf.int32)
+	    """
+	    var = tf.get_variable(GLOBAL_STEP_OP_NAME, shape=[],
+                    initializer=tf.constant_initializer(),
+                    trainable=False)
         return var
 
 def get_global_step():

@@ -8,22 +8,57 @@ import numpy as np
 from tqdm import tqdm
 from six.moves import queue
 
+from tensorpack.adversary import Adversary
 from tensorpack import *
 from tensorpack.predict import get_predict_func
 from tensorpack.utils.concurrency import *
 from tensorpack.utils.stats import  *
+import pdb
 
 global get_player
 get_player = None
 
-def play_one_episode(player, func, verbose=False):
+def play_one_episode(player, func, predict_value=None, verbose=False):
     def f(s):
         spc = player.get_action_space()
-        act = func([[s]])[0][0].argmax()
+	if True:
+            adversary = Adversary(eps=0.08)
+            max_iter = 10
+            target = None
+            with func.graph.as_default():
+                correct_act = func([[s]])[0][0].argmax()
+                for i in range(max_iter):
+                    feed = dict(zip(func.input_tensors, [[s]]))
+                    #adv_s = func.session.run(adversary.craft(func.input_tensors[0], func.policy[0], target), feed)
+		    adv_s = func.session.run(adversary.craft(func.input_tensors[0], predict_value, target), feed)
+                    adv_s = np.reshape(adv_s, s.shape)
+                    #cv2.imshow("adv_s", adv_s[0:, 0:, 0])
+                    #cv2.waitKey(1)
+                    act = func([[adv_s]])[0][0].argmax()
+
+                    #print(func.session.run(predict_value, feed), act)
+                    s = adv_s
+                    if act == target:
+                        if verbose: print('Control!')
+                        break
+                    elif target == None and correct_act != act:
+                        if verbose: print('Fool!', act, correct_act)
+                        break
+
+		
+                if act != target and target != None and verbose:
+                    print('Lose')
+                if act == correct_act and target == None and verbose:
+                    print('Normal')
+		
+	else:
+	    act = func([[s]])[0][0].argmax()
         if random.random() < 0.001:
             act = spc.sample()
+	
         if verbose:
             print(act)
+	
         return act
     return np.mean(player.play_one_episode(f))
 
@@ -31,7 +66,7 @@ def play_model(cfg):
     player = get_player(viz=0.01)
     predfunc = get_predict_func(cfg)
     while True:
-        score = play_one_episode(player, predfunc)
+        score = play_one_episode(player, predfunc, cfg.model.predict_value)
         print("Total:", score)
 
 def eval_with_funcs(predict_funcs, nr_eval):
@@ -79,6 +114,15 @@ def eval_with_funcs(predict_funcs, nr_eval):
         if stat.count > 0:
             return (stat.average, stat.max)
         return (0, 0)
+
+def eval_model_singlethread(cfg, nr_eval):
+    func = get_predict_func(cfg)
+    player = get_player(train=False)
+    scores = []
+    for _ in tqdm(range(nr_eval)):
+	score = play_one_episode(player, func, cfg.model.predict_value)
+	scores.append(score)
+    logger.info("Average Score: {}; Max Score: {}".format(sum(scores)/float(len(scores), max(scores))))
 
 def eval_model_multithread(cfg, nr_eval):
     func = get_predict_func(cfg)
