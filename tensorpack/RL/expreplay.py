@@ -14,7 +14,8 @@ from ..utils import logger, get_tqdm
 from ..utils.concurrency import LoopThread
 from ..callbacks.base import Callback
 
-__all__ = ['ExpReplay']
+# andrew
+from utils import get_rng
 
 Experience = namedtuple('Experience',
         ['state', 'action', 'reward', 'isOver'])

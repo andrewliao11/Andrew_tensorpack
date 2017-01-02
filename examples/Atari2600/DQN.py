@@ -13,6 +13,7 @@ import subprocess
 import multiprocessing, threading
 from collections import deque
 
+sys.path.append("/home/andrewliao11/Work/tensorpack")
 from tensorpack import *
 from tensorpack.utils.concurrency import *
 from tensorpack.tfutils import symbolic_functions as symbf
@@ -22,6 +23,7 @@ from tensorpack.RL import *
 import common
 from common import play_model, Evaluator, eval_model_multithread
 from atari import AtariPlayer
+import pdb
 
 BATCH_SIZE = 64
 IMAGE_SIZE = (84, 84)
@@ -49,7 +51,7 @@ METHOD = None
 
 def get_player(viz=False, train=False):
     pl = AtariPlayer(ROM_FILE, frame_skip=ACTION_REPEAT,
-            image_shape=IMAGE_SIZE[::-1], viz=viz, live_lost_as_eoe=train)
+            image_shape=IMAGE_SIZE[::-1], viz=viz, live_lost_as_eoe=train, env_name="Boxing-v0")
     global NUM_ACTIONS
     NUM_ACTIONS = pl.get_action_space().num_actions()
     if not train:

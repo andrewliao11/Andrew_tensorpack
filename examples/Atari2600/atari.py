@@ -16,6 +16,8 @@ from tensorpack.utils.stats import StatCounter
 from tensorpack.RL.envbase import RLEnvironment, DiscreteActionSpace
 
 from ale_python_interface import ALEInterface
+import pdb
+import gym
 
 __all__ = ['AtariPlayer']
 
@@ -30,7 +32,7 @@ class AtariPlayer(RLEnvironment):
     """
     def __init__(self, rom_file, viz=0, height_range=(None,None),
             frame_skip=4, image_shape=(84, 84), nullop_start=30,
-            live_lost_as_eoe=True):
+            live_lost_as_eoe=True, env_name="Boxing-v0"):
         """
         :param rom_file: path to the rom
         :param frame_skip: skip every k frames and repeat the action
@@ -55,6 +57,7 @@ class AtariPlayer(RLEnvironment):
             if execute_only_once():
                 logger.warn("You're not using latest ALE")
 
+	
         # avoid simulator bugs: https://github.com/mgbellemare/Arcade-Learning-Environment/issues/86
         with _ALE_LOCK:
             self.ale = ALEInterface()
@@ -83,7 +86,13 @@ class AtariPlayer(RLEnvironment):
             self.ale.loadROM(rom_file.encode('utf-8'))
         self.width, self.height = self.ale.getScreenDims()
         self.actions = self.ale.getMinimalActionSet()
-
+	'''
+	with _ALE_LOCK:
+	    self.rng = get_rng(self)
+	'''
+	self.env = gym.make(env_name)
+        self.width, self.height, _ = self.env.observation_space.shape
+        self.actions = np.arange(self.env.action_space.n, dtype="int32")
 
         self.live_lost_as_eoe = live_lost_as_eoe
         self.frame_skip = frame_skip
@@ -92,7 +101,14 @@ class AtariPlayer(RLEnvironment):
         self.image_shape = image_shape
 
         self.current_episode_score = StatCounter()
+	#pdb.set_trace()
         self.restart_episode()
+	'''
+	pdb.set_trace()
+	self.env = gym.make(env_name)
+	self.width, self.height, _ = self.env.observation_space.shape
+	self.actions = np.arange(self.env.action_space.n, dtype="int32")
+	'''
 
     def _grab_raw_image(self):
         """
@@ -128,7 +144,8 @@ class AtariPlayer(RLEnvironment):
     def restart_episode(self):
         self.current_episode_score.reset()
         with _ALE_LOCK:
-            self.ale.reset_game()
+            #self.ale.reset_game()
+	    self.env.reset()
 
         # random null-ops start
         n = self.rng.randint(self.nullop_start)
